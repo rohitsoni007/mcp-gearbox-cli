@@ -25,6 +25,7 @@ if (Test-Path $baseTemplateFile) {
         try {
             $githubRepo = Invoke-RestMethod -Uri "https://api.github.com/repos/modelcontextprotocol/servers" -Headers @{"User-Agent" = "PowerShell-MCP-Client"}
             $baseStarCount = $githubRepo.stargazers_count
+            $baseAvatarUrl = $githubRepo.organization.avatar_url
             
             # Add stargazer_count and by field to each base server that doesn't already have it
             for ($i = 0; $i -lt $baseData.Count; $i++) {
@@ -34,11 +35,12 @@ if (Test-Path $baseTemplateFile) {
                         "description" = $baseData[$i].description
                         "stargazer_count" = $baseStarCount
                         "by" = "Modelcontextprotocol"
+                        "avatar_url" = $baseAvatarUrl
                         "mcp" = $baseData[$i].mcp
                     }
                 }
             }
-            Write-Host "✅ Added stargazer_count ($baseStarCount) to base servers" -ForegroundColor Green
+            Write-Host "✅ Added stargazer_count ($baseStarCount) and avatar_url to base servers" -ForegroundColor Green
         } catch {
             Write-Host "⚠️ Failed to fetch GitHub stars for base servers: $($_.Exception.Message)" -ForegroundColor Yellow
         }
@@ -102,11 +104,19 @@ foreach ($server in $servers) {
     
     # Extract stargazer_count from GitHub data
     $stargazerCount = $null
+    $avatarUrl = $null
     if ($server._meta -and 
         $server._meta.'io.modelcontextprotocol.registry/publisher-provided' -and 
-        $server._meta.'io.modelcontextprotocol.registry/publisher-provided'.github -and 
-        $server._meta.'io.modelcontextprotocol.registry/publisher-provided'.github.stargazer_count) {
-        $stargazerCount = $server._meta.'io.modelcontextprotocol.registry/publisher-provided'.github.stargazer_count
+        $server._meta.'io.modelcontextprotocol.registry/publisher-provided'.github) {
+        if ($server._meta.'io.modelcontextprotocol.registry/publisher-provided'.github.stargazer_count) {
+            $stargazerCount = $server._meta.'io.modelcontextprotocol.registry/publisher-provided'.github.stargazer_count
+        }
+        # Check for avatar_url first, then fallback to owner_avatar_url
+        if ($server._meta.'io.modelcontextprotocol.registry/publisher-provided'.github.avatar_url) {
+            $avatarUrl = $server._meta.'io.modelcontextprotocol.registry/publisher-provided'.github.avatar_url
+        } elseif ($server._meta.'io.modelcontextprotocol.registry/publisher-provided'.github.owner_avatar_url) {
+            $avatarUrl = $server._meta.'io.modelcontextprotocol.registry/publisher-provided'.github.owner_avatar_url
+        }
     }
     
     # Extract organization/author from server name (e.g., "microsoft/markitdown" -> "Microsoft")
@@ -250,7 +260,12 @@ foreach ($server in $servers) {
     if ($byOrganization) {
         $mcpObject["by"] = $byOrganization
     }
-    
+
+    # Add avatar_url if available
+    if ($avatarUrl) {
+        $mcpObject["avatar_url"] = $avatarUrl
+    }
+
     # Add mcp configuration
     $mcpObject["mcp"] = [ordered]@{}
     $mcpObject["mcp"].Add($name, $mcpEntry)

@@ -4,6 +4,7 @@
         "description": "A Model Context Protocol server providing tools to fetch and convert web content for usage by LLMs",
         "stargazer_count": 71583,
         "by": "Modelcontextprotocol",
+        "avatar_url": "https://avatars.githubusercontent.com/u/182288589?v=4",
         "mcp": {
             "modelcontextprotocol/fetch": {
                 "type": "stdio",
@@ -21,6 +22,7 @@
         "description": "MCP server for filesystem access",
         "stargazer_count": 71583,
         "by": "Modelcontextprotocol",
+        "avatar_url": "https://avatars.githubusercontent.com/u/182288589?v=4",
         "mcp": {
             "modelcontextprotocol/filesystem": {
                 "type": "stdio",
@@ -39,6 +41,7 @@
         "description": "A Model Context Protocol server providing tools to read, search, and manipulate Git repositories programmatically via LLMs",
         "stargazer_count": 71583,
         "by": "Modelcontextprotocol",
+        "avatar_url": "https://avatars.githubusercontent.com/u/182288589?v=4",
         "mcp": {
             "modelcontextprotocol/git": {
                 "type": "stdio",
@@ -56,6 +59,7 @@
         "description": "MCP server for enabling memory for Claude through a knowledge graph",
         "stargazer_count": 71583,
         "by": "Modelcontextprotocol",
+        "avatar_url": "https://avatars.githubusercontent.com/u/182288589?v=4",
         "mcp": {
             "modelcontextprotocol/memory": {
                 "type": "stdio",
@@ -74,6 +78,7 @@
         "description": "MCP server for sequential thinking and problem solving",
         "stargazer_count": 71583,
         "by": "Modelcontextprotocol",
+        "avatar_url": "https://avatars.githubusercontent.com/u/182288589?v=4",
         "mcp": {
             "modelcontextprotocol/sequentialthinking": {
                 "type": "stdio",
@@ -92,6 +97,7 @@
         "description": "A Model Context Protocol server providing tools for time queries and timezone conversions for LLMs",
         "stargazer_count": 71583,
         "by": "Modelcontextprotocol",
+        "avatar_url": "https://avatars.githubusercontent.com/u/182288589?v=4",
         "mcp": {
             "modelcontextprotocol/time": {
                 "type": "stdio",
