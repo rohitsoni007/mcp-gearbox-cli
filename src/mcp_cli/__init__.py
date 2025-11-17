@@ -273,6 +273,9 @@ def load_local_mcp_servers() -> Optional[List[Dict[str, Any]]]:
         {
             "name": "Fetch",
             "description": "A Model Context Protocol server providing tools to fetch and convert web content for usage by LLMs",
+            "stargazer_count": 71583,
+            "by": "Modelcontextprotocol",
+            "avatar_url": "https://avatars.githubusercontent.com/u/182288589?v=4",
             "mcp": {
                 "modelcontextprotocol/fetch": {
                     "type": "stdio",
@@ -286,6 +289,9 @@ def load_local_mcp_servers() -> Optional[List[Dict[str, Any]]]:
         {
             "name": "Filesystem", 
             "description": "MCP server for filesystem access with read/write capabilities",
+            "stargazer_count": 71583,
+            "by": "Modelcontextprotocol",
+            "avatar_url": "https://avatars.githubusercontent.com/u/182288589?v=4",
             "mcp": {
                 "modelcontextprotocol/filesystem": {
                     "type": "stdio",
@@ -299,6 +305,9 @@ def load_local_mcp_servers() -> Optional[List[Dict[str, Any]]]:
         {
             "name": "Git",
             "description": "A Model Context Protocol server providing tools to read, search, and manipulate Git repositories",
+            "stargazer_count": 71583,
+            "by": "Modelcontextprotocol",
+            "avatar_url": "https://avatars.githubusercontent.com/u/182288589?v=4",
             "mcp": {
                 "modelcontextprotocol/git": {
                     "type": "stdio",
@@ -312,6 +321,9 @@ def load_local_mcp_servers() -> Optional[List[Dict[str, Any]]]:
         {
             "name": "Markitdown",
             "description": "Convert various file formats (PDF, Word, Excel, images, audio) to Markdown",
+            "stargazer_count": 0,
+            "by": "Microsoft",
+            "avatar_url": "https://avatars.githubusercontent.com/u/6154722?v=4",
             "mcp": {
                 "microsoft/markitdown": {
                     "type": "stdio",
@@ -500,6 +512,7 @@ def select_servers_to_remove(configured_servers: List[str], available_servers: L
                                 'name': server['name'],
                                 'by': server.get('by', 'Unknown'),
                                 'stargazer_count': server.get('stargazer_count', 0),
+                                'avatar_url': server.get('avatar_url', ''),
                                 'configured_name': configured_name,
                                 'mcp_key': mcp_key
                             }
@@ -511,6 +524,7 @@ def select_servers_to_remove(configured_servers: List[str], available_servers: L
                             'name': server['name'],
                             'by': server.get('by', 'Unknown'),
                             'stargazer_count': server.get('stargazer_count', 0),
+                            'avatar_url': server.get('avatar_url', ''),
                             'configured_name': configured_name,
                             'mcp_key': mcp_key
                         }
@@ -539,6 +553,7 @@ def select_servers_to_remove(configured_servers: List[str], available_servers: L
                 'name': server_name,
                 'by': by_org,
                 'stargazer_count': 0,
+                'avatar_url': '',
                 'configured_name': configured_name,
                 'mcp_key': configured_name
             }
@@ -1580,6 +1595,7 @@ def list_servers(
                                 'name': server['name'],
                                 'by': server.get('by', 'Unknown'),
                                 'stargazer_count': server.get('stargazer_count', 0),
+                                'avatar_url': server.get('avatar_url', ''),
                                 'configured_name': configured_name,
                                 'mcp_key': mcp_key,
                                 'description': server.get('description', 'No description available')
@@ -1592,6 +1608,7 @@ def list_servers(
                             'name': server['name'],
                             'by': server.get('by', 'Unknown'),
                             'stargazer_count': server.get('stargazer_count', 0),
+                            'avatar_url': server.get('avatar_url', ''),
                             'configured_name': configured_name,
                             'mcp_key': mcp_key,
                             'description': server.get('description', 'No description available')
@@ -1621,6 +1638,7 @@ def list_servers(
                 'name': server_name,
                 'by': by_org,
                 'stargazer_count': 0,
+                'avatar_url': '',
                 'configured_name': configured_name,
                 'mcp_key': configured_name,
                 'description': 'No description available'

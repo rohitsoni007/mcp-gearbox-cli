@@ -27,9 +27,10 @@ if [ -f "$BASE_TEMPLATE_FILE" ]; then
         # Add stargazer_count to base servers
         echo -e "\033[36mFetching GitHub stars for base servers...\033[0m"
         if github_response=$(curl -s -H "User-Agent: Bash-MCP-Client" "https://api.github.com/repos/modelcontextprotocol/servers" 2>/dev/null); then
-            if base_star_count=$(echo "$github_response" | jq -r '.stargazers_count // 0' 2>/dev/null); then
+            if base_star_count=$(echo "$github_response" | jq -r '.stargazers_count // 0' 2>/dev/null) && \
+               base_avatar_url=$(echo "$github_response" | jq -r '.organization.avatar_url // empty' 2>/dev/null); then
                 # Add stargazer_count and by field to each base server that doesn't already have it
-                base_data=$(echo "$base_data" | jq --argjson stars "$base_star_count" '
+                base_data=$(echo "$base_data" | jq --argjson stars "$base_star_count" --arg avatar "$base_avatar_url" '
                     map(
                         if .stargazer_count then . 
                         else {
@@ -37,11 +38,12 @@ if [ -f "$BASE_TEMPLATE_FILE" ]; then
                             description: .description,
                             stargazer_count: $stars,
                             by: "Modelcontextprotocol",
+                            avatar_url: $avatar,
                             mcp: .mcp
                         } end
                     )
                 ')
-                echo -e "\033[32m✅ Added stargazer_count ($base_star_count) to base servers\033[0m"
+                echo -e "\033[32m✅ Added stargazer_count ($base_star_count) and avatar_url to base servers\033[0m"
             else
                 echo -e "\033[33m⚠️ Failed to parse GitHub stars for base servers\033[0m"
             fi
@@ -104,6 +106,11 @@ for i in $(seq 0 $((server_count - 1))); do
     
     # Extract stargazer_count from GitHub data
     stargazer_count=$(echo "$server" | jq -r '._meta."io.modelcontextprotocol.registry/publisher-provided".github.stargazer_count // empty')
+    # Check for avatar_url first, then fallback to owner_avatar_url
+    avatar_url=$(echo "$server" | jq -r '._meta."io.modelcontextprotocol.registry/publisher-provided".github.avatar_url // empty')
+    if [ -z "$avatar_url" ] || [ "$avatar_url" = "null" ]; then
+        avatar_url=$(echo "$server" | jq -r '._meta."io.modelcontextprotocol.registry/publisher-provided".github.owner_avatar_url // empty')
+    fi
     
     # Extract organization/author from server name (e.g., "microsoft/markitdown" -> "Microsoft")
     by_organization=""
@@ -268,7 +275,12 @@ for i in $(seq 0 $((server_count - 1))); do
     if [ -n "$by_organization" ]; then
         mcp_object=$(echo "$mcp_object" | jq --arg by "$by_organization" '.by = $by')
     fi
-    
+
+    # Add avatar_url if available
+    if [ -n "$avatar_url" ] && [ "$avatar_url" != "null" ]; then
+        mcp_object=$(echo "$mcp_object" | jq --arg avatar "$avatar_url" '.avatar_url = $avatar')
+    fi
+
     # Check for duplicate names and handle them
     duplicate_count=0
     temp_data=$(echo "$formatted_data" | jq -c)
