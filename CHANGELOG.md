@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - avatar url
 
 
-## [0.0.13] - 2025-11-11
+## [## [Unreleased]] - 2025-11-11
 
 ### Added
 - Fix duplicate name issue & functionality
