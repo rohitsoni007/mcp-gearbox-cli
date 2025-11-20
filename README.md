@@ -83,6 +83,7 @@ uv sync
 | **[Qoder](https://qoder.com)** | ⚠️ | Qoder [does not support](https://forum.qoder.com/t/project-specific-mcp-support/260) project-level MCP configuration |
 | **[Copilot CLI](https://github.com/github/copilot-cli)** | ✅ | Copilot CLI does not support project-level MCP configuration |
 | **[LM Studio](https://lmstudio.ai)** | ✅ | LM Studio does not need project-level MCP configuration |
+| **[Google Antigravity](https://antigravity.google)** | ✅ | Google Antigravity does not support project-level MCP configuration |
 
 ## 🔧 MCP CLI Reference
 
@@ -112,7 +113,7 @@ The `mcp` command supports the following options:
 
 | Argument/Option | Type     | Description                                                                  |
 |-----------------|----------|------------------------------------------------------------------------------|
-| `--agent`, `-a` | Option   | AI agent to list servers for: `copilot`, `copilot-cli`, `continue`, `kiro`, `cursor`, `claude`, `gemini`, `qoder`, or `lmstudio`  |
+| `--agent`, `-a` | Option   | AI agent to list servers for: `copilot`, `copilot-cli`, `continue`, `kiro`, `cursor`, `claude`, `gemini`, `qoder`, `lmstudio`, or `antigravity`  |
 | `--project`, `-p` | Option | Project path (use '.' for current directory, omit for global configuration) |
 | `--servers`, `-s` | Option | List all available MCP servers instead of configured ones                   |
 | `--json`, `-j` | Option   | Output in JSON format without banner or UI                                  |
@@ -124,7 +125,7 @@ The `mcp` command supports the following options:
 |-----------------|----------|------------------------------------------------------------------------------|
 | `<servers>`     | Argument | MCP server names to remove (e.g., 'git', 'filesystem') - optional          |
 | `--all`, `-A`   | Option   | Remove all MCP servers                                                       |
-| `--agent`, `-a` | Option   | AI agent to configure: `copilot`, `copilot-cli`, `continue`, `kiro`, `cursor`, `claude`, `gemini`, `qoder`, or `lmstudio`  |
+| `--agent`, `-a` | Option   | AI agent to configure: `copilot`, `copilot-cli`, `continue`, `kiro`, `cursor`, `claude`, `gemini`, `qoder`, `lmstudio`, or `antigravity`  |
 | `--project`, `-p` | Option | Project path (use '.' for current directory, omit for global configuration) |
 | `--force`, `-f` | Option   | Skip confirmation prompts                                                    |
 | `--json`, `-j` | Option   | Output in JSON format without banner or UI                                  |
@@ -134,7 +135,7 @@ The `mcp` command supports the following options:
 
 | Argument/Option | Type     | Description                                                                  |
 |-----------------|----------|------------------------------------------------------------------------------|
-| `--agent`, `-a` | Option   | Specific agent to check: `copilot`, `copilot-cli`, `continue`, `kiro`, `cursor`, `claude`, `gemini`, `qoder`, or `lmstudio`  |
+| `--agent`, `-a` | Option   | Specific agent to check: `copilot`, `copilot-cli`, `continue`, `kiro`, `cursor`, `claude`, `gemini`, `qoder`, `lmstudio`, or `antigravity`  |
 | `--json`, `-j` | Option   | Output in JSON format without banner or UI                                  |
 | `--pretty` | Option | Pretty print JSON output (default: false)                                   |
 
@@ -174,6 +175,9 @@ mcp init -a gemini
 
 # Configure MCP globally for LM Studio AI agent
 mcp init -a lmstudio
+
+# Configure MCP globally for Google Antigravity
+mcp init -a antigravity
 
 # Add specific MCP servers directly without interactive selection
 # Method 1: Space-separated in quotes
@@ -217,6 +221,9 @@ mcp init my-project -a claude
 
 # Initialize MCP for Gemini CLI in new project directory
 mcp init my-project -a gemini
+
+# Initialize MCP for Google Antigravity in new project directory
+mcp init my-project -a antigravity
 ```
 
 #### `mcp list` Examples
@@ -236,6 +243,7 @@ mcp list -a claude
 mcp list -a gemini
 mcp list -a qoder
 mcp list -a lmstudio
+mcp list -a antigravity
 
 # List servers from current directory configuration
 mcp list -p .
@@ -301,6 +309,9 @@ mcp rm git filesystem -a claude
 # Remove specific servers for Gemini CLI
 mcp rm git filesystem -a gemini
 
+# Remove specific servers for Google Antigravity
+mcp rm git filesystem -a antigravity
+
 # Remove all MCP servers from global configuration
 mcp rm --all
 
@@ -364,6 +375,7 @@ mcp check -a claude
 mcp check -a gemini
 mcp check -a qoder
 mcp check -a lmstudio
+mcp check -a antigravity
 
 # Output in JSON format (useful for scripting and automation)
 mcp check --json

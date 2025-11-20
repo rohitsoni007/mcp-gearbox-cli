@@ -62,6 +62,12 @@ def _github_auth_headers(cli_token: str | None = None) -> dict:
 
 # Agent configuration with name, folder, install URL, and CLI tool requirement
 AGENT_CONFIG = {
+    "antigravity": {
+        "name": "Google Antigravity",
+        "folder": ".gemini/",
+        "install_url": "https://antigravity.google",
+        "requires_cli": False,
+    },
     "claude": {
         "name": "Claude Code",
         "folder": ".claude/",
@@ -171,7 +177,7 @@ def get_mcp_config_path(agent: str = "copilot", project_path: Optional[Path] = N
     """Get the MCP configuration path based on the agent and operating system.
     
     Args:
-        agent: The agent to configure (copilot, copilot-cli, continue, kiro, cursor, qoder, lmstudio, claude, gemini)
+        agent: The agent to configure (copilot, copilot-cli, continue, kiro, cursor, qoder, lmstudio, claude, gemini, antigravity)
         project_path: If provided, returns project-specific path instead of global path
     """
     if project_path:
@@ -194,6 +200,9 @@ def get_mcp_config_path(agent: str = "copilot", project_path: Optional[Path] = N
         elif agent == "gemini":
             # Gemini project: .gemini/settings.json
             return project_path / ".gemini" / "settings.json"
+        elif agent == "antigravity":
+            # antigravity does not support project-level configuration, use global path
+            return get_mcp_config_path(agent)
         elif agent == "qoder":
             # Qoder does not support project-level configuration, use global path
             return get_mcp_config_path(agent)
@@ -220,6 +229,9 @@ def get_mcp_config_path(agent: str = "copilot", project_path: Optional[Path] = N
     elif agent == "gemini":
         # Gemini uses ~/.gemini/settings.json
         return Path.home() / ".gemini" / "settings.json"
+    elif agent == "antigravity":
+        # Antigravity uses ~/.gemini/antigravity/mcp_config.json
+        return Path.home() / ".gemini" / "antigravity" / "mcp_config.json"
     elif agent == "qoder":
         # Qoder uses ~/AppData/Roaming/Qoder/SharedClientCache/mcp.json on Windows
         system = platform.system().lower()
@@ -1225,6 +1237,19 @@ def create_mcp_config(selected_servers: List[Dict[str, Any]], agent: str) -> Dic
                         cleaned_server_data["tools"] = ["*"]
                 
                 config["mcpServers"][formatted_server_key] = cleaned_server_data
+    elif agent == "antigravity":
+        # Antigravity format: {"mcpServers": {...}}
+        # Remove gallery, version, and type fields for antigravity
+        config = {"mcpServers": {}}
+        
+        for server in selected_servers:
+            mcp_config = server.get("mcp", {})
+            # Clean the server configuration by removing gallery, version, and type fields
+            cleaned_config = {}
+            for server_key, server_data in mcp_config.items():
+                cleaned_server_data = {k: v for k, v in server_data.items() if k not in ["gallery", "version", "type"]}
+                cleaned_config[server_key] = cleaned_server_data
+            config["mcpServers"].update(cleaned_config)
     else:
         # Continue, Kiro, Cursor, Qoder, LM Studio, Claude Agent and other agents format: {"mcpServers": {...}}
         # Remove gallery and version fields for other agents
@@ -1297,6 +1322,20 @@ def save_mcp_config(config: Dict[str, Any], config_path: Path, agent: str, json_
                 console.print(f"[green]Adding {len(new_servers)} servers to existing configuration:[/green]")
                 for server in new_servers:
                     console.print(f"  • {server}")
+        elif agent == "antigravity":
+            # Antigravity format
+            if "mcpServers" not in existing_config:
+                existing_config["mcpServers"] = {}
+            
+            # Merge new servers with existing ones
+            existing_config["mcpServers"].update(config["mcpServers"])
+            
+            # Show what's being added
+            new_servers = list(config["mcpServers"].keys())
+            if not json_output:
+                console.print(f"[green]Adding {len(new_servers)} servers to existing configuration:[/green]")
+                for server in new_servers:
+                    console.print(f"  • {server}")
         else:
             # Continue, Kiro, Cursor, Qoder, LM Studio, Claude Agent and other agents format
             if "mcpServers" not in existing_config:
@@ -1326,6 +1365,52 @@ def save_mcp_config(config: Dict[str, Any], config_path: Path, agent: str, json_
         return False
 
 
+def remove_servers_from_config(config: Dict[str, Any], servers_to_remove: List[str], agent: str) -> Tuple[Dict[str, Any], List[str], List[str]]:
+    """Remove specified servers from configuration. Returns updated config, removed servers, and not found servers."""
+    removed_servers = []
+    not_found_servers = []
+    
+    if agent == "copilot":
+        servers_dict = config.get("servers", {})
+    elif agent == "copilot-cli":
+        servers_dict = config.get("mcpServers", {})
+    elif agent == "antigravity":
+        servers_dict = config.get("mcpServers", {})
+    else:
+        servers_dict = config.get("mcpServers", {})
+    
+    for server_name in servers_to_remove:
+        # First try exact match
+        if server_name in servers_dict:
+            del servers_dict[server_name]
+            removed_servers.append(server_name)
+        else:
+            # Try partial matching - look for servers that end with the given name
+            # This allows "fetch" to match "modelcontextprotocol/fetch" or "modelcontextprotocol-fetch" for copilot-cli
+            matches = []
+            for full_name in servers_dict.keys():
+                # Check if the server name ends with the given name (after a slash or hyphen)
+                if full_name.endswith('/' + server_name) or full_name.endswith('-' + server_name) or full_name == server_name:
+                    matches.append(full_name)
+            
+            if len(matches) == 1:
+                # Single match found, remove it
+                full_name = matches[0]
+                del servers_dict[full_name]
+                removed_servers.append(full_name)
+            elif len(matches) > 1:
+                # Multiple matches found, this is ambiguous
+                console.print(f"[yellow]Ambiguous server name '{server_name}'. Multiple matches found:[/yellow]")
+                for match in matches:
+                    console.print(f"  • {match}")
+                console.print(f"[yellow]Please use the full server name to specify which one to remove.[/yellow]")
+                not_found_servers.append(server_name)
+            else:
+                # No matches found
+                not_found_servers.append(server_name)
+    
+    return config, removed_servers, not_found_servers
+
 
 def load_existing_mcp_config(config_path: Path, agent: str) -> Dict[str, Any]:
     """Load existing MCP configuration from the specified path."""
@@ -1339,11 +1424,14 @@ def load_existing_mcp_config(config_path: Path, agent: str) -> Dict[str, Any]:
         console.print(f"[red]Error reading configuration: {e}[/red]")
         return {}
 
+
 def list_configured_servers(config: Dict[str, Any], agent: str) -> List[str]:
     """List all configured MCP servers from the configuration."""
     if agent == "copilot":
         return list(config.get("servers", {}).keys())
     elif agent == "copilot-cli":
+        return list(config.get("mcpServers", {}).keys())
+    elif agent == "antigravity":
         return list(config.get("mcpServers", {}).keys())
     else:
         return list(config.get("mcpServers", {}).keys())
@@ -1356,6 +1444,8 @@ def remove_servers_from_config(config: Dict[str, Any], servers_to_remove: List[s
     if agent == "copilot":
         servers_dict = config.get("servers", {})
     elif agent == "copilot-cli":
+        servers_dict = config.get("mcpServers", {})
+    elif agent == "antigravity":
         servers_dict = config.get("mcpServers", {})
     else:
         servers_dict = config.get("mcpServers", {})
@@ -1394,7 +1484,7 @@ def remove_servers_from_config(config: Dict[str, Any], servers_to_remove: List[s
 
 @app.command("list")
 def list_servers(
-    agent: Optional[str] = typer.Option(None, "--agent", "-a", help="Agent to list servers for (copilot, copilot-cli, continue, kiro, cursor, qoder, lmstudio, claude, gemini)"),
+    agent: Optional[str] = typer.Option(None, "--agent", "-a", help="Agent to list servers for (copilot, copilot-cli, continue, kiro, cursor, qoder, lmstudio, claude, gemini, antigravity)"),
     project_path: Optional[str] = typer.Option(None, "--project", "-p", help="Project path (use '.' for current directory, omit for global configuration)"),
     available_servers: bool = typer.Option(False, "--servers", "-s", help="List all available MCP servers instead of configured ones"),
     json_output: bool = typer.Option(False, "--json", "-j", help="Output in JSON format without banner or UI"),
@@ -1541,7 +1631,7 @@ def list_servers(
         console.print(f"[bold green]Selected Agent: {AGENT_CONFIG[agent]['name']}[/bold green]")
     
     # Get configuration path
-    if is_global or agent == "qoder" or agent == "lmstudio" or agent == "copilot-cli":
+    if is_global or agent == "qoder" or agent == "lmstudio" or agent == "copilot-cli"  or agent == "antigravity":
         config_path = get_mcp_config_path(agent)
     else:
         config_path = get_mcp_config_path(agent, target_path)
@@ -1706,7 +1796,7 @@ def list_servers(
 def rm(
     servers: Optional[List[str]] = typer.Argument(None, help="MCP server names to remove (e.g., 'git', 'filesystem')"),
     all_servers: bool = typer.Option(False, "--all", "-A", help="Remove all MCP servers"),
-    agent: Optional[str] = typer.Option(None, "--agent", "-a", help="Agent to configure (copilot, copilot-cli, continue, kiro, cursor, qoder, lmstudio, claude, gemini)"),
+    agent: Optional[str] = typer.Option(None, "--agent", "-a", help="Agent to configure (copilot, copilot-cli, continue, kiro, cursor, qoder, lmstudio, claude, gemini, antigravity)"),
     project_path: Optional[str] = typer.Option(None, "--project", "-p", help="Project path (use '.' for current directory, omit for global configuration)"),
     force: bool = typer.Option(False, "--force", "-f", help="Skip confirmation prompts"),
     json_output: bool = typer.Option(False, "--json", "-j", help="Output in JSON format without banner or UI"),
@@ -1780,7 +1870,7 @@ def rm(
         console.print(f"[bold green]Selected Agent: {AGENT_CONFIG[agent]['name']}[/bold green]")
     
     # Get configuration path
-    if is_global or agent == "qoder" or agent == "lmstudio" or agent == "copilot-cli":
+    if is_global or agent == "qoder" or agent == "lmstudio" or agent == "copilot-cli"  or agent == "antigravity":
         config_path = get_mcp_config_path(agent)
     else:
         config_path = get_mcp_config_path(agent, target_path)
@@ -2033,7 +2123,7 @@ def check_agent_installation(agent_key: str, agent_config: Dict[str, Any]) -> Di
 
 @app.command()
 def check(
-    agent: Optional[str] = typer.Option(None, "--agent", "-a", help="Specific agent to check (copilot, copilot-cli, continue, kiro, cursor, qoder, lmstudio, claude, gemini)"),
+    agent: Optional[str] = typer.Option(None, "--agent", "-a", help="Specific agent to check (copilot, copilot-cli, continue, kiro, cursor, qoder, lmstudio, claude, gemini, antigravity)"),
     json_output: bool = typer.Option(False, "--json", "-j", help="Output in JSON format without banner or UI"),
     pretty: bool = typer.Option(False, "--pretty", help="Pretty print JSON output (default: false)"),
 ):
@@ -2152,7 +2242,7 @@ def check(
 def init(
     project_name: Optional[str] = typer.Argument(None, help="Name of the project to initialize (use '.' for current directory, omit for global configuration)"),
     servers: Optional[List[str]] = typer.Option(None, "--servers", "-s", help="MCP server names to add directly. Use multiple times (-s git -s filesystem) or space-separated (-s 'git filesystem')"),
-    agent: Optional[str] = typer.Option(None, "--agent", "-a", help="Agent to configure (copilot, copilot-cli, continue, kiro, cursor, qoder, lmstudio, claude, gemini)"),
+    agent: Optional[str] = typer.Option(None, "--agent", "-a", help="Agent to configure (copilot, copilot-cli, continue, kiro, cursor, qoder, lmstudio, claude, gemini, antigravity)"),
     json_output: bool = typer.Option(False, "--json", "-j", help="Output in JSON format without banner or UI"),
     pretty: bool = typer.Option(False, "--pretty", help="Pretty print JSON output (default: false)"),
 ):
@@ -2273,6 +2363,10 @@ def init(
             console.print(f"[yellow]⚠️  Note: LM Studio does not need project-level MCP configuration.[/yellow]")
             console.print(f"[yellow]   Configuration will be saved to global LM Studio settings instead.[/yellow]")
             console.print()
+        elif agent == "antigravity":
+            console.print(f"[yellow]⚠️  Note: Google Antigravity does not support project-level MCP configuration.[/yellow]")
+            console.print(f"[yellow]   Configuration will be saved to global Antigravity settings instead.[/yellow]")
+            console.print()
         elif agent == "claude":
             if is_global:
                 console.print(f"[cyan]ℹ️  Claude global configuration will be saved to ~/.claude.json[/cyan]")
@@ -2351,7 +2445,7 @@ def init(
     config = create_mcp_config(selected_servers, agent)
     
     # Get configuration path based on mode (global vs project-specific)
-    if is_global or agent == "qoder" or agent == "lmstudio" or agent == "copilot-cli":
+    if is_global or agent == "qoder" or agent == "lmstudio" or agent == "copilot-cli" or agent == "antigravity":
         config_path = get_mcp_config_path(agent)  # Global path
     else:
         config_path = get_mcp_config_path(agent, project_path)  # Project-specific path
@@ -2403,6 +2497,8 @@ def init(
                     console.print(f"3. Use 'gemini' command to start a new conversation")
                 elif agent == "copilot-cli":
                     console.print(f"3. Use 'copilot' command to start a new conversation")
+                elif agent == "antigravity":
+                    console.print(f"3. Use 'antigravity' command to start a new conversation")
             else:
                 console.print(f"\n[bold green]🎉 MCP project initialization completed successfully![/bold green]")
                 
@@ -2419,6 +2515,9 @@ def init(
                 elif agent == "lmstudio":
                     console.print(f"2. The MCP servers will be loaded from global LM Studio settings")
                     console.print(f"3. Open the chat in LM Studio")
+                elif agent == "antigravity":
+                    console.print(f"2. The MCP servers will be loaded from global Antigravity settings")
+                    console.print(f"3. Open the project in Google Antigravity IDE")
                 else:
                     console.print(f"2. The MCP servers will be automatically loaded from: {config_path.relative_to(project_path)}")
                     if agent == "copilot":
