@@ -7,10 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.15] - 2025-11-20
+
 ### Added
 - google antigravity support
 
-## [## [Unreleased]] - 2025-11-17
+## [0.0.14] - 2025-11-17
 
 ### Added
 - avatar url
